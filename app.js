@@ -6,6 +6,16 @@ const stun = require('node-stun');
 const alidns = require('./alidns.js');
 const config = require('./config.json');
 
+const dnsLookup = function (target, cb) {
+  dns.lookup(target, (err, address, family) => {
+    if (err) {
+      console.error('lookup error:', err);
+      return;
+    }
+    console.log(target + ': address: %j family: IPv%s', address, family);
+    cb(null, address, family);
+  });
+};
 
 const fetchPublicIp = function (hosts, cb) {
   var i = 0;
