@@ -181,6 +181,7 @@ const delayed = 1000 * 60 * 10;
 (function ddns () {
   getTarget(function (err, target) {
     if (err) {
+      console.log('------------------getTarget----------------');
       setTimeout(ddns, delayed);
       return;
     }
@@ -192,8 +193,8 @@ const delayed = 1000 * 60 * 10;
         console.log('updated:' + new Date() + ': [' + msg + '] ' + JSON.stringify(target));
       } else {
         console.log('----------' + msg + '----------');
-        setTimeout(ddns, delayed);
       }
+      setTimeout(ddns, delayed);
     });
   });
 })();
