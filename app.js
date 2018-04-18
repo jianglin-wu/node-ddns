@@ -3,25 +3,56 @@ const http = require('http');
 const dns = require('dns');
 const url = require('url');
 const stun = require('node-stun');
+const moment = require('moment');
+const _ = require('lodash');
 const alidns = require('./alidns.js');
-const config = require('./config.json');
+const CONSTANT = require('./config.json');
 
+// 日志时间格式
+const format = 'YYYY-MM-DD HH:mm:ss Z';
+// 公共 STUN 服务器地址。
+const hosts = [
+  { addr: 'sip1.lakedestiny.cordiaip.com' },
+  { addr: 'stun.callwithus.com' },
+  { addr: 'stun.counterpath.net' },
+  { addr: 'stun.ideasip.com' },
+  { addr: 'stun.internetcalls.com' },
+  { addr: 'stun.sipgate.net' },
+  { addr: 'stun.stunprotocol.org' },
+  { addr: 'stun.voip.aebc.com' },
+  { addr: 'stun.voipbuster.com' },
+  { addr: 'stun.voxgratia.org' },
+  { addr: 'stun.xten.com' },
+];
+// 获取ip信息间隔
+const delayed = 1000 * 60 * 10;
+
+// 打印日志
+const log = function() {
+  const arr = Array.prototype.slice.call(arguments);
+  const type = arr[0];
+  arr[0] = moment().format(format) + ' ' + type + ': ';
+  console[type || 'log'].apply(null, arr);
+}
+
+// 查询域名解析地址
 const dnsLookup = function (target, cb) {
   dns.lookup(target, (err, address, family) => {
     if (err) {
-      console.error('lookup error:', err);
+      log('error', 'lookup error:', err);
       return;
     }
-    console.log(target + ': address: %j family: IPv%s', address, family);
+    log('log', target + ': address: %j family: IPv%s', address, family);
     cb(null, address, family);
   });
 };
 
-const fetchPublicIp = function (hosts, cb) {
+// 通过 STUN 查询当前公网 IP 地址。
+const fetchPublicIp = function (servers, cb) {
   var i = 0;
 
   (function connectStunServer () {
-    const host = hosts[i];
+    const host = servers[i];
     i++;
 
     var client = stun.createClient();
@@ -30,51 +61,19 @@ const fetchPublicIp = function (hosts, cb) {
       var mapped = client.getMappedAddr();
       client.close();
       if (result === 0) {
-        console.log('[' + hosts.length + '-' + i + '] Success(' + result + '): mapped=' + mapped.address + ':' + mapped.port);
+        log('log', '[connectStunServer] ' + i + '/' + servers.length + ': ', host.addr + ' Success(' + result + ')! ip=' + mapped.address);
         cb(null, mapped.address);
         return;
       }
 
-      if (i < hosts.length) {
-        console.log('[' + hosts.length + '-' + i + '] Fail(' + result + '): ' + host.addr + ':' + host.port);
+      if (i < servers.length) {
+        log('log', '[connectStunServer] ' + i + '/' + servers.length + ': ', host.addr + ' Fail(' + result + ')!');
         connectStunServer();
       } else {
-        console.log('---------- fetchPublicIp fail! ----------');
         cb(true);
       }
     });
   })();
-};
-
-
-
-// hostname 以 query string 形式传入, 格式为 xx.example.com
-// ip 如果在 query string 中出现, 则设定为该 ip, 否则设定为访问客户端的 ip
-const getTarget = function (cb) {
-  const hosts = [
-    { addr: 'sip1.lakedestiny.cordiaip.com' },
-    { addr: 'stun.callwithus.com' },
-    { addr: 'stun.counterpath.net' },
-    { addr: 'stun.ideasip.com' },
-    { addr: 'stun.internetcalls.com' },
-    { addr: 'stun.sipgate.net' },
-    { addr: 'stun.stunprotocol.org' },
-    { addr: 'stun.voip.aebc.com' },
-    { addr: 'stun.voipbuster.com' },
-    { addr: 'stun.voxgratia.org' },
-    { addr: 'stun.xten.com' },
-  ]
-  fetchPublicIp(hosts, function(err, ip) {
-    if (err) {
-      cb(true);
-      return;
-    }
-    cb(null, {
-      hostname: config.domain,
-      type: 'A',
-      ip: ip,
-    });
-  });
 };
 
 // 这段代码首先会检查已有的记录
@@ -163,7 +162,7 @@ const updateRecord = function (target, callback) {
             if (res.statusCode === 200) {
               callback('updated');
             } else {
-              console.err("Failed to update target error");
+              log('error', '[request] 更新域名解析失败：', 'Failed to update target error');
               res.pipe(process.stderr);
               callback('error');
             }
@@ -187,22 +186,29 @@ const updateRecord = function (target, callback) {
   }).end();
 };
 
-const delayed = 1000 * 60 * 10;
 (function ddns () {
-  getTarget(function (err, target) {
+  const servers = _.shuffle(hosts);
+  fetchPublicIp(servers, function(err, ip) {
     if (err) {
-      console.log('------------------getTarget----------------');
+      log('error', '[fetchPublicIp] 获取公网IP失败：', err);
       setTimeout(ddns, delayed);
       return;
     }
+    const target = {
+      hostname: CONSTANT.domain,
+      type: 'A',
+      ip: ip,
+    };
     updateRecord(target, (msg) => {
       if (msg === 'error') {
-        console.error('更新域名解析失败:', msg);
+        log('error', '[updateRecord] 更新域名解析失败：', msg);
         return;
       }else if (msg === 'updated') {
-        console.log('updated:' + new Date() + ': [' + msg + '] ' + JSON.stringify(target));
+        log('log', '[updateRecord] 更新域名解析成功：', JSON.stringify(target));
+      } else if (msg === 'nochg') {
+        log('log', '[updateRecord] 域名解析正常无需更新。');
       } else {
-        console.log('----------' + msg + '----------');
+        log('log', '[updateRecord] 其他：', '----------' + msg + '----------');
       }
       setTimeout(ddns, delayed);
     });
