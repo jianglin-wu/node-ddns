@@ -1,7 +1,9 @@
 'use strict';
 const http = require('http');
+const fs = require('fs');
 const dns = require('dns');
 const url = require('url');
+const path = require('path');
 const stun = require('node-stun');
 const moment = require('moment');
 const _ = require('lodash');
@@ -29,10 +31,29 @@ const delayed = 1000 * 60 * 10;
 
 // 打印日志
 const log = function() {
+  if (!CONSTANT.log) {
+    return;
+  }
+
   const arr = Array.prototype.slice.call(arguments);
   const type = arr[0];
   arr[0] = moment().format(format) + ' ' + type + ': ';
-  console[type || 'log'].apply(null, arr);
+
+  const msg = arr.join(' ') + '\n';
+  fs.stat(CONSTANT.logDirectory || __dirname, function (err, stats) {
+    if (err || !stats.isDirectory()) {
+      writeLog('ddns.log', msg);
+    }
+    writeLog(path.join(CONSTANT.logDirectory, 'ddns.log'), msg);
+  })
+}
+
+const writeLog = function (path, msg){
+  fs.appendFile(path, msg, 'utf8', function(err) {
+    if (err) {
+      console.error('Log write failure: ', msg);
+    }
+  });
 }
 
 // 查询域名解析地址

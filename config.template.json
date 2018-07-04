@@ -1,5 +1,7 @@
 {
   "AccessKeyId": "",
   "AccessKeySecret": "",
-  "domain": ""
+  "domain": "",
+  "log": false,
+  "logDirectory": "/logs"
 }
