@@ -56,3 +56,11 @@ $ docker run -d --name node-ddns \
   --restart always \
   node-ddns node app.js > /dev/null
 ```
+
+
+**todo**
+
+* [ ] doc: 使用 Node.js 方式启动详细文档。
+* [ ] doc: 使用 Docker 方式启动详细文档。
+* [ ] doc: 在 Jenkins 中的实践应用。
+* [ ] feat: 对进程的意外终止进行日志记录。
