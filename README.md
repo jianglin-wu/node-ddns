@@ -50,9 +50,9 @@ $ DDNS_LOG=no
 ```bash
 $ docker run -d --name node-ddns \
   -v logs-ddns:/logs \
-  -e DDNS_KEY_ID=XXXXXX
-  -e DDNS_KEY_SECRET=XXXXXX
-  -e DDNS_DOMAIN=your.domain.xx
+  -e DDNS_KEY_ID=XXXXXX \
+  -e DDNS_KEY_SECRET=XXXXXX \
+  -e DDNS_DOMAIN=your.domain.xx \
   --restart always \
   node-ddns node app.js > /dev/null
 ```
