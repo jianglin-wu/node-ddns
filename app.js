@@ -31,15 +31,16 @@ const delayed = 1000 * 60 * 10;
 
 // 打印日志
 const log = function() {
-  if (!CONSTANT.LOG || CONSTANT.LOG === 'off') {
-    return;
-  }
-
   const arr = Array.prototype.slice.call(arguments);
   const type = arr[0];
   arr[0] = moment().format(format) + ' ' + type + ': ';
-
   const msg = arr.join(' ') + '\n';
+
+  if (!CONSTANT.LOG || CONSTANT.LOG !== 'on') {
+    console.log(msg);
+    return;
+  }
+
   fs.stat(CONSTANT.LOG_DIR || __dirname, function (err, stats) {
     if (err || !stats.isDirectory()) {
       writeLog('ddns.log', msg);

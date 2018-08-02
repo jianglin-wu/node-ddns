@@ -11,6 +11,14 @@ Object.keys(confDft).forEach((keyName) => {
 	config[keyName] = confDft[keyName];
 });
 
-console.log('config:', config);
+if (!config.KEY_ID || !config.KEY_SECRET) {
+	console.log('请配置 KEY_ID 与 KEY_SECRET！');
+	process.exit(2);
+}
+
+if (!config.DOMAIN) {
+	console.log('请配置 DOMAIN！');
+	process.exit(2);
+}
 
 module.exports = config;
