@@ -8,7 +8,7 @@ const stun = require('node-stun');
 const moment = require('moment');
 const _ = require('lodash');
 const alidns = require('./alidns.js');
-const CONSTANT = require('./config.json');
+const CONSTANT = require('./constant');
 
 // 日志时间格式
 const format = 'YYYY-MM-DD HH:mm:ss Z';
@@ -31,7 +31,7 @@ const delayed = 1000 * 60 * 10;
 
 // 打印日志
 const log = function() {
-  if (!CONSTANT.log) {
+  if (!CONSTANT.LOG || CONSTANT.LOG === 'off') {
     return;
   }
 
@@ -40,11 +40,11 @@ const log = function() {
   arr[0] = moment().format(format) + ' ' + type + ': ';
 
   const msg = arr.join(' ') + '\n';
-  fs.stat(CONSTANT.logDirectory || __dirname, function (err, stats) {
+  fs.stat(CONSTANT.LOG_DIR || __dirname, function (err, stats) {
     if (err || !stats.isDirectory()) {
       writeLog('ddns.log', msg);
     }
-    writeLog(path.join(CONSTANT.logDirectory, 'ddns.log'), msg);
+    writeLog(path.join(CONSTANT.LOG_DIR, 'ddns.log'), msg);
   })
 }
 
@@ -216,7 +216,7 @@ const updateRecord = function (target, callback) {
       return;
     }
     const target = {
-      hostname: CONSTANT.domain,
+      hostname: CONSTANT.DOMAIN,
       type: 'A',
       ip: ip,
     };

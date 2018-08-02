@@ -1,5 +1,5 @@
 'use strict';
-const config = require('./config.json');
+const CONSTANT = require('./constant');
 const crypto = require('crypto');
 
 const ALIDNS_HOST = 'alidns.aliyuncs.com';
@@ -10,7 +10,7 @@ const HTTP_METHOD = "GET";
 const commonParams = {
   Format: 'JSON',
   Version: '2015-01-09',
-  AccessKeyId: config.AccessKeyId,
+  AccessKeyId: CONSTANT.KEY_ID,
   SignatureMethod: 'HMAC-SHA1',
   SignatureVersion: '1.0'
 };
@@ -73,7 +73,7 @@ const getQueryString = function (reqParams) {
   const combinedParams = getCombinedParams(reqParams);
   let canonicalizedQueryString = convertJsonToQueryString(combinedParams);
   const stringToSign = getStringToSign(canonicalizedQueryString);
-  const hmac = crypto.createHmac('sha1', config.AccessKeySecret + '&');
+  const hmac = crypto.createHmac('sha1', CONSTANT.KEY_SECRET + '&');
   hmac.update(stringToSign);
   const Signature = hmac.digest('base64');
   canonicalizedQueryString += '&Signature=' + percentEncode(Signature);
